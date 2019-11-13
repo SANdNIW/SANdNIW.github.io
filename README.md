@@ -3,7 +3,7 @@
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <script src="../resources/vendors/sweetalert2/sweetalert2.all.min.js"></script>
+       <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
 
         <script>
                 Swal.fire({
