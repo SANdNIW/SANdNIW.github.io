@@ -8,8 +8,8 @@
                 Swal.fire({
                     title: 'MISSING',
                     imageUrl: 'https://scontent.fbkk5-6.fna.fbcdn.net/v/t1.0-1/p160x160/69239874_2565693186822939_4217481378696003584_n.jpg?_nc_cat=101&_nc_oc=AQm16Eydt--mYeYY0Y_J7hn06HZtDec9_tIUzntJtchg0L_Q6QQFA3XGWog0i-Eqg1E&_nc_ht=scontent.fbkk5-6.fna&oh=a1d9c9ad98ddc217b179e61ffa0a6063&oe=5E5DF70F',
-                    imageWidth: 450,
-                    imageHeight: 450,
+                    imageWidth: 350,
+                    imageHeight: 350,
                     imageAlt: 'Custom image',
                     backdrop: `
                                 rgba(0,0,123,0.4)
