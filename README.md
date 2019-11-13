@@ -21,7 +21,6 @@
                                 no-repeat
                             `
                 });
-            }
         </script>
 
  <title>JSP Page</title>
