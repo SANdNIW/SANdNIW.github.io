@@ -21,7 +21,7 @@
             function keyNumtoScreen(val) {
                 var fromSC = $('#screen').val();
                 if ($.isNumeric(val)) {
-                    if (fromSC === "0.00") {
+                    if (fromSC === "0") {
                         fromSC = "";
                     }
                     $('#screen').val(fromSC + val);
@@ -93,7 +93,7 @@
         </div>
         <div style="width: 100%; height: 200px;" align="center">
             <input name="screen2" id='screen2' style="background-color: green; color: white;" ><br style="line-height:10px;" readonly>
-            <input name="screen" id='screen' style="background-color: green; width: 550px; height: 100px; color: white;" value="0.00" readonly>
+            <input name="screen" id='screen' style="background-color: green; width: 550px; height: 100px; color: white;" value="0" readonly>
             <br>
             <hr style="width: 550px;">
             <br>
