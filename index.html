@@ -21,7 +21,7 @@
             function keyNumtoScreen(val) {
                 var fromSC = $('#screen').val();
                 if ($.isNumeric(val)) {
-                    if (fromSC === "0") {
+                    if (fromSC === "0.00") {
                         fromSC = "";
                     }
                     $('#screen').val(fromSC + val);
