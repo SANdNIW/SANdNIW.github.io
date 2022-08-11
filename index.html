@@ -1,110 +1,164 @@
-<%--<%@page contentType="text/html" pageEncoding="UTF-8"%>--%>
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-    "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 
 <html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>CalaC</title>
 
-        <script src="https://code.jquery.com/jquery-3.4.1.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU=" crossorigin="anonymous"></script>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1"> 
+    <!-- <meta http-equiv="Content-Type" content="text/html; "> -->
+    <title>CalaC</title>
 
-        <style>
-            input[type="button"]{
-                width: 50px; 
-                height: 50px;
-            }
-        </style>
+    <script src="https://code.jquery.com/jquery-3.4.1.js"
+        integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU=" crossorigin="anonymous"></script>
 
-        <script>
+    <style>
+        input[type="button"] {
+            width: 50px;
+            height: 50px;
+        }
+    </style>
 
-            function keyNumtoScreen(val) {
-                var fromSC = $('#screen').val();
-                if ($.isNumeric(val)) {
-                    if (fromSC === "0") {
-                        fromSC = "";
-                    }
-                    $('#screen').val(fromSC + val);
-                } else {
+    <script>
 
-                    if (val === ".") {
-                        if (!fromSC.includes(".")) {
-                            $('#screen').val(fromSC + ".");
-                        }
-                    }
+        $(document).ready(function () {
+            $.ajax({
+                url: "https://covid19.ddc.moph.go.th/api/Cases/today-cases-all",
+                async: false
+            }).done(function (result) {
 
-                    if (val === "+") {
-                        $('#screen2').val(fromSC + "+");
-                        $('#screen').val("");
-                    } else if (val === "-") {
-                        $('#screen2').val(fromSC + "-");
-                        $('#screen').val("");
-                    } else if (val === "x") {
-                        $('#screen2').val(fromSC + "x");
-                        $('#screen').val("");
-                    } else if (val === "/") {
-                        $('#screen2').val(fromSC + "/");
-                        $('#screen').val("");
-                    } else if (val === "=") {
-                        var sc1 = $('#screen').val();
-                        var sc2 = $('#screen2').val();
+                for (var i = 0; i < result.length; i++) {
+                    // console.log(result[i]);
+                    $('#newcase').text(result[i].new_case);
+                    $('#newdead').text(result[i].new_death);
+                    $('#newrecover').text(result[i].new_recovered);
 
-                        var lastChar = sc2.substr(sc2.length - 1); //last char is sign
-                        sc2 = sc2.slice(0, -1);
+                    let fulldate = result[i].txn_date;
+                    let subDate = fulldate.split("-")[2];
+                    let subMonth = fulldate.split("-")[1];
+                    let subYear = fulldate.split("-")[0];
 
-                        if (lastChar === "+") {
-                            var sum = parseFloat(sc2) + parseFloat(sc1);
-                            $('#screen').val(sum.toFixed(2));
-                            $('#screen2').val("");
-                        } else if (lastChar === "-") {
-                            var sum = parseFloat(sc2) - parseFloat(sc1);
-                            $('#screen').val(sum.toFixed(2));
-                            $('#screen2').val("");
-                        } else if (lastChar === "x") {
-                            var sum = parseFloat(sc2) * parseFloat(sc1);
-                            $('#screen').val(sum.toFixed(2));
-                            $('#screen2').val("");
-                        } else if (lastChar === "/") {
-                            var sum = parseFloat(sc2) / parseFloat(sc1);
-                            if (isNaN(sum)) {
-                                $('#screen').val("VALUE IS NAN");
-                            } else {
-                                $('#screen').val(sum.toFixed(2));
-                                $('#screen2').val("");
-                            }
-                        }
+                    $('#txn_date').text("วันที่ " + subDate + " / " + subMonth + " / " + subYear);
+                }
 
-                    } else if (val === "c") {
-                        $('#screen').val("");
-                        $('#screen2').val("");
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                // needs to implement if it fails
+            });
+        });
+
+        function keyNumtoScreen(val) {
+            var fromSC = $('#screen').val();
+            if ($.isNumeric(val)) {
+                if (fromSC === "0") {
+                    fromSC = "";
+                }
+                $('#screen').val(fromSC + val);
+            } else {
+
+                if (val === ".") {
+                    if (!fromSC.includes(".")) {
+                        $('#screen').val(fromSC + ".");
                     }
                 }
 
+                if (val === "+") {
+                    $('#screen2').val(fromSC + "+");
+                    $('#screen').val("");
+                } else if (val === "-") {
+                    $('#screen2').val(fromSC + "-");
+                    $('#screen').val("");
+                } else if (val === "x") {
+                    $('#screen2').val(fromSC + "x");
+                    $('#screen').val("");
+                } else if (val === "/") {
+                    $('#screen2').val(fromSC + "/");
+                    $('#screen').val("");
+                } else if (val === "=") {
+                    var sc1 = $('#screen').val();
+                    var sc2 = $('#screen2').val();
 
+                    var lastChar = sc2.substr(sc2.length - 1); //last char is sign
+                    sc2 = sc2.slice(0, -1);
+
+                    if (lastChar === "+") {
+                        var sum = parseFloat(sc2) + parseFloat(sc1);
+                        $('#screen').val(sum.toFixed(2));
+                        $('#screen2').val("");
+                    } else if (lastChar === "-") {
+                        var sum = parseFloat(sc2) - parseFloat(sc1);
+                        $('#screen').val(sum.toFixed(2));
+                        $('#screen2').val("");
+                    } else if (lastChar === "x") {
+                        var sum = parseFloat(sc2) * parseFloat(sc1);
+                        $('#screen').val(sum.toFixed(2));
+                        $('#screen2').val("");
+                    } else if (lastChar === "/") {
+                        var sum = parseFloat(sc2) / parseFloat(sc1);
+                        if (isNaN(sum)) {
+                            $('#screen').val("VALUE IS NAN");
+                        } else {
+                            $('#screen').val(sum.toFixed(2));
+                            $('#screen2').val("");
+                        }
+                    }
+
+                } else if (val === "c") {
+                    $('#screen').val("");
+                    $('#screen2').val("");
+                }
             }
 
-        </script>
 
-    </head>
-    <body>
-        <div style="width: 100%;" align="center">
-            <h1>Hello World!</h1>
-            <p>It's ME</p>
+        }
+
+    </script>
+
+</head>
+
+<body>
+    <div style="width: 100%;" align="center">
+        <h1>Hello World!</h1>
+        <p>It's ME</p>
+        <h1>ToDay Covid <label id="txn_date"></label></h1>
+        <div>
+            <div>
+                ติดใหม่ : <label id="newcase"></label> ราย &nbsp; เสียชีวิต : <label id="newdead"></label> ราย &nbsp; รักษาหาย : <label id="newrecover"></label> ราย
+            </div>
         </div>
-        <div style="width: 100%; height: 200px;" align="center">
-            <input name="screen2" id='screen2' style="background-color: green; color: white;" ><br style="line-height:10px;" readonly>
-            <input name="screen" id='screen' style="background-color: green; width: 550px; height: 100px; color: white;" value="0" readonly>
-            <br>
-            <hr style="width: 550px;">
-            <br>
-            <div><input name="num1" id='num1' type="button" onclick="keyNumtoScreen(this.value)" value="1"> &nbsp; <input name="num2" id='num2' type="button" onclick="keyNumtoScreen(this.value)" value="2"> &nbsp; <input name="num3" id='num3' type="button" onclick="keyNumtoScreen(this.value)" value="3"> </div><br style="line-height:10px;">
-            <div><input name="num4" id='num4' type="button" onclick="keyNumtoScreen(this.value)" value="4"> &nbsp; <input name="num5" id='num5' type="button" onclick="keyNumtoScreen(this.value)" value="5"> &nbsp; <input name="num6" id='num6' type="button" onclick="keyNumtoScreen(this.value)" value="6"></div><br style="line-height:10px;">
-            <div><input name="num7" id='num7' type="button" onclick="keyNumtoScreen(this.value)" value="7"> &nbsp; <input name="num8" id='num8' type="button" onclick="keyNumtoScreen(this.value)" value="8"> &nbsp; <input name="num99" id='num9' type="button" onclick="keyNumtoScreen(this.value)" value="9"></div><br style="line-height:10px;">
-            <div><input name="num0" id='num0' type="button" onclick="keyNumtoScreen(this.value)" value="0"> &nbsp; <input name="numd" id='numd' type="button" onclick="keyNumtoScreen(this.value)" value="."> &nbsp; <input name="numc" id='numc' type="button" onclick="keyNumtoScreen(this.value)" value="c"></div><br style="line-height:10px;">
-            <div><input name="nump" id='nump' type="button" onclick="keyNumtoScreen(this.value)" value="+"> &nbsp; <input name="numm" id='numm' type="button" onclick="keyNumtoScreen(this.value)" value="-"> &nbsp; <input name="numk" id='numk' type="button" onclick="keyNumtoScreen(this.value)" value="x"></div><br style="line-height:10px;">
-            <div><input name="nums" id='nums' type="button" onclick="keyNumtoScreen(this.value)" value="/"> &nbsp; <input name="numen" id='numen' type="button" onclick="keyNumtoScreen(this.value)" value="="></div>
+    </div>
+    <br>
+    <div style="width: 100%; height: 200px;" align="center">
+        <input name="screen2" id='screen2' style="background-color: green; color: white;"><br style="line-height:10px;"
+            readonly>
+        <input name="screen" id='screen' style="background-color: green; width: 550px; height: 100px; color: white;"
+            value="0" readonly>
+        <br>
+        <hr style="width: 550px;">
+        <br>
+        <div><input name="num1" id='num1' type="button" onclick="keyNumtoScreen(this.value)" value="1"> &nbsp;
+            <input name="num2" id='num2' type="button" onclick="keyNumtoScreen(this.value)" value="2"> &nbsp; <input
+                name="num3" id='num3' type="button" onclick="keyNumtoScreen(this.value)" value="3">
+        </div><br style="line-height:10px;">
+        <div><input name="num4" id='num4' type="button" onclick="keyNumtoScreen(this.value)" value="4"> &nbsp;
+            <input name="num5" id='num5' type="button" onclick="keyNumtoScreen(this.value)" value="5"> &nbsp; <input
+                name="num6" id='num6' type="button" onclick="keyNumtoScreen(this.value)" value="6">
+        </div><br style="line-height:10px;">
+        <div><input name="num7" id='num7' type="button" onclick="keyNumtoScreen(this.value)" value="7"> &nbsp;
+            <input name="num8" id='num8' type="button" onclick="keyNumtoScreen(this.value)" value="8"> &nbsp; <input
+                name="num99" id='num9' type="button" onclick="keyNumtoScreen(this.value)" value="9">
+        </div><br style="line-height:10px;">
+        <div><input name="num0" id='num0' type="button" onclick="keyNumtoScreen(this.value)" value="0"> &nbsp;
+            <input name="numd" id='numd' type="button" onclick="keyNumtoScreen(this.value)" value="."> &nbsp; <input
+                name="numc" id='numc' type="button" onclick="keyNumtoScreen(this.value)" value="c">
+        </div><br style="line-height:10px;">
+        <div><input name="nump" id='nump' type="button" onclick="keyNumtoScreen(this.value)" value="+"> &nbsp;
+            <input name="numm" id='numm' type="button" onclick="keyNumtoScreen(this.value)" value="-"> &nbsp; <input
+                name="numk" id='numk' type="button" onclick="keyNumtoScreen(this.value)" value="x">
+        </div><br style="line-height:10px;">
+        <div><input name="nums" id='nums' type="button" onclick="keyNumtoScreen(this.value)" value="/"> &nbsp;
+            <input name="numen" id='numen' type="button" onclick="keyNumtoScreen(this.value)" value="=">
         </div>
+    </div>
 
 
-    </body>
+</body>
+
 </html>
