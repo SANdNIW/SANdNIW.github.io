@@ -1,0 +1,80 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#compass-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    border: 5px solid #fff;
+    transition: transform 0.1s ease-out; /* Smooth rotation */
+}
+
+#map-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* The map image itself doesn't rotate, the container does. 
+       Or we can rotate the image. Let's rotate the container for better effect. */
+}
+
+.overlay-arrow {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    font-weight: bold;
+    color: red;
+    text-shadow: 0 2px 4px rgba(255,255,255,0.8);
+    z-index: 10;
+    pointer-events: none;
+}
+
+.controls {
+    margin-top: 20px;
+    text-align: center;
+    z-index: 100;
+}
+
+#start-btn {
+    padding: 12px 24px;
+    font-size: 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+#start-btn:active {
+    transform: scale(0.98);
+}
+
+#debug-info {
+    margin-top: 10px;
+    color: #555;
+    font-size: 14px;
+}
