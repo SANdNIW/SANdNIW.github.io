@@ -1,25 +1,758 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Compass Map</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>สต็อกสินค้า</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  /* ══════════════════════════════════════
+     CONFIG — แก้ค่าพวกนี้ก่อนใช้งาน
+  ══════════════════════════════════════ */
+  :root {
+    --supabase-url: 'https://somltiirczruccixpbke.supabase.co';
+    --supabase-anon: 'sb_publishable_8yCFDwKSHq61qBdiyAXX6w_z_1PofJO';
+
+    
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f10;
+    --bg2: #17171a;
+    --bg3: #1f1f23;
+    --border: #2a2a30;
+    --border2: #38383f;
+    --text: #e8e8ec;
+    --text2: #8b8b96;
+    --text3: #55555f;
+    --accent: #4ade80;
+    --accent-dim: rgba(74,222,128,0.12);
+    --accent-border: rgba(74,222,128,0.3);
+    --danger: #f87171;
+    --danger-dim: rgba(248,113,113,0.1);
+    --warn: #fbbf24;
+    --warn-dim: rgba(251,191,36,0.1);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.1);
+    --font: 'IBM Plex Sans Thai', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+    --r: 8px;
+    --r2: 12px;
+  }
+
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.6; }
+
+  /* ── AUTH SCREEN ── */
+  #auth-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(74,222,128,0.06) 0%, transparent 70%);
+  }
+  .auth-box { text-align: center; max-width: 340px; padding: 0 24px; }
+  .auth-logo { font-family: var(--mono); font-size: 11px; color: var(--text3); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 40px; }
+  .auth-title { font-size: 26px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+  .auth-sub { color: var(--text2); font-size: 13px; margin-bottom: 36px; }
+  .btn-github {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--text); color: #0f0f10; padding: 12px 24px;
+    border-radius: var(--r); font-family: var(--font); font-size: 14px; font-weight: 500;
+    border: none; cursor: pointer; transition: opacity .15s;
+  }
+  .btn-github:hover { opacity: .88; }
+  .btn-github svg { width: 18px; height: 18px; }
+
+  /* ── APP SHELL ── */
+  #app { display: none; flex-direction: column; min-height: 100vh; }
+  #app.visible { display: flex; }
+
+  /* ── HEADER ── */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; height: 52px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-brand { font-family: var(--mono); font-size: 12px; color: var(--text3); letter-spacing: 0.1em; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border2); }
+  .btn-signout {
+    font-size: 12px; color: var(--text3); background: none; border: none;
+    cursor: pointer; font-family: var(--font); padding: 4px 8px;
+    border-radius: 4px; transition: color .15s;
+  }
+  .btn-signout:hover { color: var(--danger); }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex; border-bottom: 1px solid var(--border);
+    padding: 0 20px; background: var(--bg);
+  }
+  .tab {
+    padding: 12px 16px; font-size: 13px; font-weight: 500; cursor: pointer;
+    color: var(--text3); border-bottom: 2px solid transparent;
+    margin-bottom: -1px; transition: color .15s, border-color .15s;
+    background: none; border-top: none; border-left: none; border-right: none;
+    font-family: var(--font);
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text2); }
+
+  /* ── PANELS ── */
+  .panel { display: none; flex: 1; padding: 20px; }
+  .panel.active { display: block; }
+
+  /* ── TOOLBAR ── */
+  .toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .search-wrap { position: relative; flex: 1; min-width: 180px; }
+  .search-wrap input {
+    width: 100%; background: var(--bg2); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 12px 8px 34px; border-radius: var(--r);
+    font-family: var(--font); font-size: 13px; outline: none;
+    transition: border-color .15s;
+  }
+  .search-wrap input:focus { border-color: var(--border2); }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text3); pointer-events: none; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: var(--r); font-family: var(--font);
+    font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--accent); color: #0a1a0f; }
+  .btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+  .btn-danger-ghost { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(248,113,113,.2); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; border-radius: var(--r2); border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: var(--bg2); }
+  th {
+    text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 500;
+    color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.015); }
+  .td-mono { font-family: var(--mono); font-size: 12px; color: var(--text2); }
+  .td-price { font-family: var(--mono); font-size: 13px; }
+  .badge {
+    display: inline-flex; align-items: center; padding: 2px 8px;
+    border-radius: 20px; font-size: 11px; font-weight: 500; font-family: var(--mono);
+  }
+  .badge-ok { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); }
+  .badge-low { background: var(--warn-dim); color: var(--warn); border: 1px solid rgba(251,191,36,.3); }
+  .badge-empty { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(248,113,113,.2); }
+  .td-actions { display: flex; gap: 6px; }
+  .empty-row td { text-align: center; padding: 40px; color: var(--text3); }
+
+  /* ── MODAL ── */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .modal-bg.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r2);
+    width: 100%; max-width: 460px; margin: 16px;
+    transform: translateY(10px); transition: transform .2s;
+  }
+  .modal-bg.open .modal { transform: translateY(0); }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+  }
+  .modal-title { font-size: 15px; font-weight: 600; }
+  .modal-close { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 18px; line-height: 1; }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.04em; }
+  .field input, .field textarea, .field select {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text); padding: 9px 12px; border-radius: var(--r);
+    font-family: var(--font); font-size: 13px; outline: none; transition: border-color .15s;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--border2); }
+  .field select option { background: var(--bg3); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── SCAN PANEL ── */
+  .scan-center { max-width: 440px; margin: 0 auto; }
+  .scan-input-wrap {
+    display: flex; gap: 8px; margin-bottom: 20px;
+  }
+  .scan-input {
+    flex: 1; background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text); padding: 14px 16px; border-radius: var(--r);
+    font-family: var(--mono); font-size: 18px; outline: none; letter-spacing: 0.05em;
+    transition: border-color .15s;
+  }
+  .scan-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .scan-result {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--r2); overflow: hidden;
+  }
+  .scan-result-header { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .scan-product-name { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .scan-product-meta { font-family: var(--mono); font-size: 12px; color: var(--text2); }
+  .scan-stock-display { padding: 24px 20px; display: flex; align-items: center; gap: 24px; }
+  .stock-big { font-family: var(--mono); font-size: 48px; font-weight: 500; line-height: 1; }
+  .stock-label { font-size: 12px; color: var(--text3); margin-top: 4px; }
+  .stock-arrow { font-size: 24px; color: var(--border2); }
+  .stock-after { font-family: var(--mono); font-size: 48px; font-weight: 500; line-height: 1; color: var(--accent); }
+  .scan-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; align-items: center; }
+  .qty-input { width: 72px; background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: var(--r); font-family: var(--mono); font-size: 16px; outline: none; text-align: center; }
+  .qty-input:focus { border-color: var(--border2); }
+  .scan-empty { text-align: center; padding: 48px 20px; color: var(--text3); }
+  .scan-empty-icon { font-size: 40px; margin-bottom: 12px; opacity: .4; }
+  .scan-msg { padding: 10px 14px; border-radius: var(--r); font-size: 13px; margin-bottom: 14px; }
+  .scan-msg-ok { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); }
+  .scan-msg-err { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(248,113,113,.2); }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    background: var(--bg3); border: 1px solid var(--border2);
+    padding: 10px 16px; border-radius: var(--r); font-size: 13px;
+    opacity: 0; transform: translateY(8px); transition: all .2s; pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+  #toast.ok { border-color: var(--accent-border); color: var(--accent); }
+  #toast.err { border-color: rgba(248,113,113,.3); color: var(--danger); }
+
+  /* ── LOADING ── */
+  .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── LOG TABLE ── */
+  .log-section { margin-top: 24px; }
+  .log-section h3 { font-size: 12px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; font-weight: 500; }
+</style>
 </head>
 <body>
 
-    <div class="container">
-        <div id="compass-container">
-            <img src="map.png" id="map-image" alt="Map">
-            <div class="overlay-arrow">⬆️ N</div>
-        </div>
-        
-        <div class="controls">
-            <button id="start-btn">เริ่มใช้งานเข็มทิศ (Start Compass)</button>
-            <p id="debug-info">Heading: 0°</p>
-        </div>
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">Stock Manager v1.0</div>
+    <div class="auth-title">จัดการสินค้า</div>
+    <div class="auth-sub">เข้าสู่ระบบด้วย GitHub เพื่อเริ่มใช้งาน</div>
+    <button class="btn-github" onclick="signIn()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      เข้าสู่ระบบด้วย GitHub
+    </button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <span class="header-brand">STOCK / MGR</span>
+    <div class="header-right">
+      <img id="user-avatar" class="avatar" src="" alt="">
+      <span id="user-name" style="font-size:13px;color:var(--text2)"></span>
+      <button class="btn-signout" onclick="signOut()">ออกจากระบบ</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('products',this)">สินค้า</button>
+    <button class="tab" onclick="switchTab('scan',this)">สแกนตัด Stock</button>
+  </div>
+
+  <!-- PRODUCTS PANEL -->
+  <div id="panel-products" class="panel active">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="search-input" placeholder="ค้นหาสินค้า / บาร์โค้ด" oninput="filterProducts()">
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="loadProducts()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+        รีเฟรช
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="openModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        เพิ่มสินค้า
+      </button>
     </div>
 
-    <script src="script.js"></script>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>บาร์โค้ด</th>
+            <th>ชื่อสินค้า</th>
+            <th>หมวดหมู่</th>
+            <th>ราคา</th>
+            <th>Stock</th>
+            <th>หน่วย</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="products-table-body">
+          <tr class="empty-row"><td colspan="7"><span class="spin"></span> กำลังโหลด...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SCAN PANEL -->
+  <div id="panel-scan" class="panel">
+    <div class="scan-center">
+      <div id="scan-msg"></div>
+      <div class="scan-input-wrap">
+        <input
+          type="text" id="scan-input" class="scan-input"
+          placeholder="สแกนหรือพิมพ์บาร์โค้ด"
+          autofocus
+          onkeydown="if(event.key==='Enter') lookupBarcode()"
+        >
+        <button class="btn btn-primary" onclick="lookupBarcode()">ค้นหา</button>
+      </div>
+      <div id="scan-result-area">
+        <div class="scan-empty">
+          <div class="scan-empty-icon">⬛</div>
+          <div>พร้อมรับการสแกน</div>
+          <div style="font-size:12px;margin-top:4px;color:var(--text3)">สแกนบาร์โค้ดหรือพิมพ์แล้วกด Enter</div>
+        </div>
+      </div>
+
+      <div class="log-section">
+        <h3>ประวัติล่าสุด</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>เวลา</th>
+                <th>สินค้า</th>
+                <th>ก่อน</th>
+                <th>หลัง</th>
+                <th>จำนวน</th>
+              </tr>
+            </thead>
+            <tbody id="log-table-body">
+              <tr class="empty-row"><td colspan="5" style="color:var(--text3)">ยังไม่มีประวัติ</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div id="product-modal" class="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">เพิ่มสินค้า</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="form-id">
+      <div class="field">
+        <label>บาร์โค้ด</label>
+        <input type="text" id="form-barcode" placeholder="เช่น 8850000000001">
+      </div>
+      <div class="field">
+        <label>ชื่อสินค้า *</label>
+        <input type="text" id="form-name" placeholder="ชื่อสินค้า">
+      </div>
+      <div class="field">
+        <label>รายละเอียด</label>
+        <input type="text" id="form-description" placeholder="รายละเอียดเพิ่มเติม">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>ราคา (บาท)</label>
+          <input type="number" id="form-price" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="field">
+          <label>หน่วย</label>
+          <input type="text" id="form-unit" placeholder="ชิ้น / กล่อง / kg">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Stock</label>
+          <input type="number" id="form-stock" placeholder="0" min="0">
+        </div>
+        <div class="field">
+          <label>Stock ขั้นต่ำ (แจ้งเตือน)</label>
+          <input type="number" id="form-min-stock" placeholder="0" min="0">
+        </div>
+      </div>
+      <div class="field">
+        <label>หมวดหมู่</label>
+        <input type="text" id="form-category" placeholder="เช่น เครื่องดื่ม / ขนม">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveProduct()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════
+//  CONFIG — แก้ค่านี้ก่อน deploy
+// ══════════════════════════════════════
+const SUPABASE_URL  = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
+
+// ══════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let allProducts = [];
+let currentScanProduct = null;
+
+// handle OAuth callback hash
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    showApp(session.user);
+  }
+  sb.auth.onAuthStateChange((_e, sess) => {
+    if (sess) showApp(sess.user);
+    else showAuth();
+  });
+}
+
+function showApp(user) {
+  document.getElementById('auth-screen').style.display = 'none';
+  const app = document.getElementById('app');
+  app.classList.add('visible');
+  document.getElementById('user-name').textContent = user.user_metadata?.full_name || user.email;
+  const av = document.getElementById('user-avatar');
+  av.src = user.user_metadata?.avatar_url || '';
+  av.style.display = av.src ? '' : 'none';
+  loadProducts();
+  loadLogs();
+}
+
+function showAuth() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').classList.remove('visible');
+}
+
+async function signIn() {
+  await sb.auth.signInWithOAuth({
+    provider: 'github',
+    options: { redirectTo: location.href }
+  });
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  showAuth();
+}
+
+// ══════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+  if (name === 'scan') {
+    loadLogs();
+    setTimeout(() => document.getElementById('scan-input').focus(), 100);
+  }
+}
+
+// ══════════════════════════════════════
+//  PRODUCTS CRUD
+// ══════════════════════════════════════
+async function loadProducts() {
+  const tbody = document.getElementById('products-table-body');
+  tbody.innerHTML = '<tr class="empty-row"><td colspan="7"><span class="spin"></span> กำลังโหลด...</td></tr>';
+  const { data, error } = await sb.from('products').select('*').eq('is_active', true).order('name');
+  if (error) { toast('โหลดข้อมูลล้มเหลว: ' + error.message, 'err'); return; }
+  allProducts = data || [];
+  renderProducts(allProducts);
+}
+
+function renderProducts(products) {
+  const tbody = document.getElementById('products-table-body');
+  if (!products.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">ไม่พบสินค้า</td></tr>';
+    return;
+  }
+  tbody.innerHTML = products.map(p => {
+    let badge = '';
+    if (p.stock <= 0) badge = `<span class="badge badge-empty">หมด</span>`;
+    else if (p.stock <= p.min_stock) badge = `<span class="badge badge-low">${p.stock}</span>`;
+    else badge = `<span class="badge badge-ok">${p.stock}</span>`;
+    return `<tr>
+      <td class="td-mono">${esc(p.barcode || '—')}</td>
+      <td>${esc(p.name)}</td>
+      <td style="color:var(--text2)">${esc(p.category || '—')}</td>
+      <td class="td-price">${p.price ? '฿' + Number(p.price).toLocaleString('th-TH', {minimumFractionDigits:2}) : '—'}</td>
+      <td>${badge}</td>
+      <td style="color:var(--text2);font-size:12px">${esc(p.unit || 'ชิ้น')}</td>
+      <td>
+        <div class="td-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editProduct('${p.id}')">แก้ไข</button>
+          <button class="btn btn-danger-ghost btn-sm" onclick="deleteProduct('${p.id}','${esc(p.name)}')">ลบ</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterProducts() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  renderProducts(allProducts.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    (p.barcode || '').toLowerCase().includes(q) ||
+    (p.category || '').toLowerCase().includes(q)
+  ));
+}
+
+function openModal(product) {
+  const modal = document.getElementById('product-modal');
+  document.getElementById('modal-title').textContent = product ? 'แก้ไขสินค้า' : 'เพิ่มสินค้า';
+  document.getElementById('form-id').value          = product?.id || '';
+  document.getElementById('form-barcode').value     = product?.barcode || '';
+  document.getElementById('form-name').value        = product?.name || '';
+  document.getElementById('form-description').value = product?.description || '';
+  document.getElementById('form-price').value       = product?.price || '';
+  document.getElementById('form-unit').value        = product?.unit || 'ชิ้น';
+  document.getElementById('form-stock').value       = product?.stock ?? '';
+  document.getElementById('form-min-stock').value   = product?.min_stock ?? '';
+  document.getElementById('form-category').value    = product?.category || '';
+  modal.classList.add('open');
+  document.getElementById('form-name').focus();
+}
+
+function closeModal() { document.getElementById('product-modal').classList.remove('open'); }
+
+function editProduct(id) {
+  const p = allProducts.find(x => x.id === id);
+  if (p) openModal(p);
+}
+
+async function saveProduct() {
+  const id   = document.getElementById('form-id').value;
+  const name = document.getElementById('form-name').value.trim();
+  if (!name) { toast('กรุณาใส่ชื่อสินค้า', 'err'); return; }
+
+  const payload = {
+    barcode:     document.getElementById('form-barcode').value.trim() || null,
+    name,
+    description: document.getElementById('form-description').value.trim() || null,
+    price:       parseFloat(document.getElementById('form-price').value) || 0,
+    unit:        document.getElementById('form-unit').value.trim() || 'ชิ้น',
+    stock:       parseInt(document.getElementById('form-stock').value) || 0,
+    min_stock:   parseInt(document.getElementById('form-min-stock').value) || 0,
+    category:    document.getElementById('form-category').value.trim() || null,
+  };
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
+
+  let error;
+  if (id) {
+    ({ error } = await sb.from('products').update(payload).eq('id', id));
+  } else {
+    ({ error } = await sb.from('products').insert(payload));
+  }
+
+  btn.disabled = false; btn.textContent = 'บันทึก';
+  if (error) { toast('บันทึกล้มเหลว: ' + error.message, 'err'); return; }
+  toast(id ? 'อัปเดตสินค้าแล้ว' : 'เพิ่มสินค้าแล้ว', 'ok');
+  closeModal();
+  loadProducts();
+}
+
+async function deleteProduct(id, name) {
+  if (!confirm(`ลบสินค้า "${name}" ?\n(ข้อมูลจะถูกซ่อน ไม่ได้ลบจริง)`)) return;
+  const { error } = await sb.from('products').update({ is_active: false }).eq('id', id);
+  if (error) { toast('ลบล้มเหลว: ' + error.message, 'err'); return; }
+  toast('ลบสินค้าแล้ว', 'ok');
+  loadProducts();
+}
+
+// ══════════════════════════════════════
+//  SCAN & STOCK
+// ══════════════════════════════════════
+async function lookupBarcode() {
+  const barcode = document.getElementById('scan-input').value.trim();
+  if (!barcode) return;
+  document.getElementById('scan-msg').innerHTML = '';
+
+  const { data, error } = await sb
+    .from('products')
+    .select('*')
+    .eq('barcode', barcode)
+    .eq('is_active', true)
+    .single();
+
+  if (error || !data) {
+    showScanMsg('ไม่พบสินค้าบาร์โค้ด: ' + barcode, 'err');
+    document.getElementById('scan-result-area').innerHTML = `
+      <div class="scan-empty">
+        <div class="scan-empty-icon" style="opacity:.5">✕</div>
+        <div>ไม่พบสินค้า</div>
+        <div style="font-size:12px;margin-top:4px;color:var(--text3)">${esc(barcode)}</div>
+      </div>`;
+    currentScanProduct = null;
+    return;
+  }
+
+  currentScanProduct = data;
+  renderScanResult(data);
+}
+
+function renderScanResult(p) {
+  const area = document.getElementById('scan-result-area');
+  const after = p.stock - 1;
+  area.innerHTML = `
+    <div class="scan-result">
+      <div class="scan-result-header">
+        <div class="scan-product-name">${esc(p.name)}</div>
+        <div class="scan-product-meta">${esc(p.barcode || '')} ${p.category ? '· ' + esc(p.category) : ''}</div>
+      </div>
+      <div class="scan-stock-display">
+        <div>
+          <div class="stock-big" style="color:${p.stock <= p.min_stock ? 'var(--warn)' : 'var(--text)'}">${p.stock}</div>
+          <div class="stock-label">stock ปัจจุบัน</div>
+        </div>
+        <div class="stock-arrow">→</div>
+        <div>
+          <div class="stock-after" id="stock-after-display">${Math.max(0, p.stock - 1)}</div>
+          <div class="stock-label">หลังตัด</div>
+        </div>
+      </div>
+      <div class="scan-footer">
+        <label style="font-size:13px;color:var(--text2);white-space:nowrap">จำนวนที่ตัด</label>
+        <input type="number" class="qty-input" id="scan-qty" value="1" min="1" max="${p.stock}"
+          oninput="updateScanPreview(${p.stock})">
+        <div style="flex:1"></div>
+        <button class="btn btn-ghost" onclick="clearScan()">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="confirmDeduct()">ยืนยันตัด Stock</button>
+      </div>
+    </div>`;
+}
+
+function updateScanPreview(currentStock) {
+  const qty = parseInt(document.getElementById('scan-qty').value) || 0;
+  const el = document.getElementById('stock-after-display');
+  if (el) el.textContent = Math.max(0, currentStock - qty);
+}
+
+async function confirmDeduct() {
+  if (!currentScanProduct) return;
+  const qty = parseInt(document.getElementById('scan-qty').value) || 1;
+  if (qty <= 0) { toast('จำนวนต้องมากกว่า 0', 'err'); return; }
+  if (qty > currentScanProduct.stock) { toast('Stock ไม่พอ', 'err'); return; }
+
+  const { data, error } = await sb.rpc('deduct_stock', {
+    p_product_id: currentScanProduct.id,
+    p_qty: qty,
+    p_note: 'สแกนจากระบบ'
+  });
+
+  if (error) { toast('ตัด Stock ล้มเหลว: ' + error.message, 'err'); return; }
+
+  showScanMsg(`✓ ตัด ${qty} ${currentScanProduct.unit || 'ชิ้น'} · "${currentScanProduct.name}" เหลือ ${data.qty_after}`, 'ok');
+  document.getElementById('scan-input').value = '';
+  document.getElementById('scan-result-area').innerHTML = `
+    <div class="scan-empty">
+      <div class="scan-empty-icon">⬛</div>
+      <div>พร้อมรับการสแกนต่อไป</div>
+    </div>`;
+  currentScanProduct = null;
+  document.getElementById('scan-input').focus();
+  loadLogs();
+  loadProducts();
+}
+
+function clearScan() {
+  document.getElementById('scan-input').value = '';
+  document.getElementById('scan-msg').innerHTML = '';
+  document.getElementById('scan-result-area').innerHTML = `
+    <div class="scan-empty">
+      <div class="scan-empty-icon">⬛</div>
+      <div>พร้อมรับการสแกน</div>
+      <div style="font-size:12px;margin-top:4px;color:var(--text3)">สแกนบาร์โค้ดหรือพิมพ์แล้วกด Enter</div>
+    </div>`;
+  currentScanProduct = null;
+  document.getElementById('scan-input').focus();
+}
+
+function showScanMsg(msg, type) {
+  document.getElementById('scan-msg').innerHTML =
+    `<div class="scan-msg scan-msg-${type}">${msg}</div>`;
+}
+
+// ══════════════════════════════════════
+//  LOGS
+// ══════════════════════════════════════
+async function loadLogs() {
+  const tbody = document.getElementById('log-table-body');
+  const { data, error } = await sb
+    .from('stock_logs')
+    .select('*, products(name, unit)')
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error || !data || !data.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5" style="color:var(--text3)">ยังไม่มีประวัติ</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(log => {
+    const time = new Date(log.created_at).toLocaleString('th-TH', { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'short' });
+    const change = log.qty_change < 0
+      ? `<span style="color:var(--danger)">${log.qty_change}</span>`
+      : `<span style="color:var(--accent)">+${log.qty_change}</span>`;
+    return `<tr>
+      <td class="td-mono" style="font-size:11px;color:var(--text2)">${time}</td>
+      <td>${esc(log.products?.name || '—')}</td>
+      <td class="td-mono">${log.qty_before}</td>
+      <td class="td-mono">${log.qty_after}</td>
+      <td class="td-mono">${change}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════
+function esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 3000);
+}
+
+// ══════════════════════════════════════
+//  START
+// ══════════════════════════════════════
+init();
+</script>
 </body>
 </html>
