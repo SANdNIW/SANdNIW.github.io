@@ -306,7 +306,10 @@
       <input type="hidden" id="form-id">
       <div class="field">
         <label>บาร์โค้ด</label>
-        <input type="text" id="form-barcode" placeholder="เช่น 8850000000001">
+        <div style="display:flex;gap:6px">
+          <input type="text" id="form-barcode" placeholder="เช่น 8850000000001" style="flex:1">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="genBarcode()" style="white-space:nowrap;flex-shrink:0">สร้างอัตโนมัติ</button>
+        </div>
       </div>
       <div class="field">
         <label>ชื่อสินค้า *</label>
@@ -645,6 +648,18 @@ async function loadLogs() {
 // ══════════════════════════════════════
 //  UTILS
 // ══════════════════════════════════════
+function genBarcode() {
+  const ts = Date.now().toString().slice(-7);
+  const rand = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+  const body = '885' + ts + rand;
+  let sum = 0;
+  for (let i = 0; i < body.length; i++) {
+    sum += parseInt(body[i]) * (i % 2 === 0 ? 1 : 3);
+  }
+  const check = (10 - (sum % 10)) % 10;
+  document.getElementById('form-barcode').value = body + check;
+}
+
 function esc(str) {
   return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
